@@ -1,0 +1,70 @@
+{
+  "_notes": "OPEN placeholders. Fill legal names, WhatsApp numbers, UPI IDs, FSSAI numbers, and addresses before live use. DEMO- FSSAI ids are allowed only for the hackathon demo.",
+  "campus": "IIITD",
+  "messes": [
+    {
+      "id": "mess_a",
+      "display_name": "Mess A",
+      "whatsapp": "",
+      "fssai_fbo": "DEMO-FBO-MESSA",
+      "address": "IIIT Delhi campus (same location as Mess B)",
+      "veg_default": "veg"
+    },
+    {
+      "id": "mess_b",
+      "display_name": "Mess B",
+      "whatsapp": "",
+      "fssai_fbo": "DEMO-FBO-MESSB",
+      "address": "IIIT Delhi campus (same location as Mess A)",
+      "veg_default": "veg"
+    }
+  ],
+  "drops": [
+    {
+      "id": "drop_a",
+      "display_name": "Drop A",
+      "whatsapp": "",
+      "fssai_sfdo": "DEMO-SFDO-DROPA",
+      "address": "",
+      "veg_policy": "veg_only",
+      "fostac_ok": true
+    },
+    {
+      "id": "drop_b",
+      "display_name": "Drop B",
+      "whatsapp": "",
+      "fssai_sfdo": "DEMO-SFDO-DROPB",
+      "address": "",
+      "veg_policy": "nonveg_ok",
+      "fostac_ok": true
+    }
+  ],
+  "riders": [
+    {
+      "id": "rider_1",
+      "display_name": "Rider 1",
+      "whatsapp": "",
+      "upi_id": "",
+      "active": true
+    },
+    {
+      "id": "rider_2",
+      "display_name": "Rider 2",
+      "whatsapp": "",
+      "upi_id": "",
+      "active": true
+    },
+    {
+      "id": "rider_3",
+      "display_name": "Rider 3",
+      "whatsapp": "",
+      "upi_id": "",
+      "active": true
+    }
+  ],
+  "rider_ids_in_order": ["rider_1", "rider_2", "rider_3"],
+  "waba": {
+    "phone": "",
+    "provider": null
+  }
+}

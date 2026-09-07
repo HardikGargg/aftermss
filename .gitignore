@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.aws/
+data/ledger.json
+data/decisions.json
+data/processed/
+data/aftermess/runtime.json
+data/aftermess/exports/
+*.egg-info/
+.idea/
+.vscode/

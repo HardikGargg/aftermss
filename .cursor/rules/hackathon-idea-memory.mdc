@@ -1,0 +1,20 @@
+---
+description: Chosen hackathon idea — AfterMess (IIITD leftover closeout)
+alwaysApply: true
+---
+
+# Chosen: AfterMess (IIITD campus leftover closeout)
+
+Good Neighbor. New Strands agent on an existing ritual. Do not turn it into a city portal, gig delivery, or 15-mess marketplace.
+
+**Story:** IIITD, 2 mess vendors at the same campus location, 2 named drops (NGO / community kitchen), 2–3 named riders. Unused leftover after lunch and dinner is dumped because coordinating need, pack, pickup, drop, and rider pay is extra work. Food stays free. Riders are paid by the drop on UPI. Messes do not cook extra.
+
+**Contest v1:** lunch and dinner. WhatsApp only for mess, drop, and rider. No extra user UI.
+
+**Loop:** drop NEED (plates) first → sitting-end mess RELEASE or NO → hard safety gate (FSSAI unused/unserved, labels, temperature, packed/insulated) → fill-one-drop match `min(need, leftover)` → assign next rostered rider (ACCEPT, cancel walks the list) → PICKED → DROPPED → RECEIVED → UPI pay reminder → PAID → Schedule II + Eat Right evidence pack.
+
+**Human keywords:** Drop NEED / RECEIVED / PAID. Mess RELEASE or NO. Rider ACCEPT / CANCEL / PICKED / DROPPED. Unsafe food is refused with no human bargain.
+
+**College incentive (honest):** Eat Right Campus Part C waste/surplus evidence + the legally required FSSAI Schedule II register. Not 80G, not CSR, not a cash subsidy.
+
+**Out of scope for v1:** Rapido/Dunzo, open NGO signup, multi-campus, breakfast/snacks, charging for food, served plate scrap, extra cooking, agent holding money.

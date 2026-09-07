@@ -1,0 +1,33 @@
+{
+  "_notes": "OPEN clocks, rupee amount, language, WABA template names, and most timeouts. Null means the agent will not invent a value. Tick with --phase to run without wall-clock times. pay_reminder_max=2 is the spec's proposed default and is overridable.",
+  "campus": "IIITD",
+  "language": null,
+  "trip_rupees": null,
+  "use_by_hours": null,
+  "perishable_requires_insulated": true,
+  "rider_is_food_contact": false,
+  "clocks": {
+    "lunch_need_cutoff": null,
+    "lunch_end": null,
+    "dinner_need_cutoff": null,
+    "dinner_end": null,
+    "timezone": "Asia/Kolkata"
+  },
+  "timeouts_minutes": {
+    "mess_release": null,
+    "rider_accept": null,
+    "picked": null,
+    "dropped": null,
+    "received": null,
+    "paid": null,
+    "chase": null
+  },
+  "pay_reminder_max": 2,
+  "templates": {
+    "need_reminder": null,
+    "mess_release_ask": null,
+    "rider_assign": null,
+    "proof_chase": null,
+    "pay_reminder": null
+  }
+}
