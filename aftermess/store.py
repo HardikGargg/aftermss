@@ -160,6 +160,12 @@ def trips_for(sitting_date: str, sitting: str) -> list[dict[str, Any]]:
     ]
 
 
+def delete_trip(trip_id: str) -> None:
+    rt = load_runtime()
+    rt["trips"] = [row for row in rt["trips"] if row["id"] != trip_id]
+    save_runtime(rt)
+
+
 def get_trip(trip_id: str) -> dict[str, Any] | None:
     for row in load_runtime()["trips"]:
         if row["id"] == trip_id:

@@ -20,6 +20,15 @@ from aftermess.parse import parse_inbound
 from aftermess.safety import apply_gate
 
 SITTINGS = {"lunch", "dinner"}
+
+
+def _campus_locked(party_id: str, sitting_row: dict[str, Any]) -> bool:
+    """The closed campus demo locks a sitting after match. Registered messes stay open."""
+    if not sitting_row.get("matched_at"):
+        return False
+    from aftermess.accounts import is_registered
+
+    return not is_registered(party_id)
 PROOF_STATES = {
     "awaiting_pickup": ("picked", "PICKED"),
     "awaiting_drop": ("dropped", "DROPPED"),
@@ -109,7 +118,7 @@ def record_mess_no(
     cfg, current = _cfg_now(now)
     sitting_date = sitting_date or sitting_date_str(cfg, current)
     sit = store.get_sitting(sitting_date, sitting)
-    if sit.get("matched_at"):
+    if _campus_locked(mess_id, sit):
         return {"ok": False, "error": "already_matched"}
     row = store.upsert_release(
         {
@@ -137,7 +146,7 @@ def record_mess_release(
     directory = load_directory()
     sitting_date = sitting_date or sitting_date_str(cfg, current)
     sit = store.get_sitting(sitting_date, sitting)
-    if sit.get("matched_at"):
+    if _campus_locked(mess_id, sit):
         return {"ok": False, "error": "already_matched"}
     mess = get_party(mess_id, directory)
     row = {
@@ -222,7 +231,13 @@ def assign_next_rider(trip_id: str) -> dict[str, Any]:
         }:
             busy.add(other["rider_id"])
     chosen = None
-    for rider_id in roster_ids(directory):
+    if trip.get("lat") is not None and trip.get("lng") is not None:
+        from aftermess.accounts import nearby_rider_ids
+
+        rider_order = nearby_rider_ids(float(trip["lat"]), float(trip["lng"]))
+    else:
+        rider_order = roster_ids(directory)
+    for rider_id in rider_order:
         rider = get_party(rider_id, directory)
         if not rider.get("active", True):
             continue
@@ -341,7 +356,10 @@ def record_rider_accept(rider_id: str, trip_id: str | None = None) -> dict[str, 
     if trip.get("rider_id") != rider_id:
         return {"ok": False, "error": "not_your_trip"}
     trip = store.upsert_trip({**trip, "state": "awaiting_pickup", "accepted_at": store._now()})
-    emit(rider_id, "Accepted. Reply PICKED when you have the covered containers at campus.")
+    if trip.get("lat") is not None:
+        emit(rider_id, "Accepted. Mark picked up when you have the covered containers.")
+    else:
+        emit(rider_id, "Accepted. Reply PICKED when you have the covered containers at campus.")
     return {"ok": True, "trip": trip}
 
 
@@ -365,7 +383,10 @@ def record_picked(rider_id: str, trip_id: str | None = None) -> dict[str, Any]:
     if not trip:
         return {"ok": False, "error": "no_awaiting_pickup_trip"}
     trip = store.upsert_trip({**trip, "state": "awaiting_drop", "picked_at": store._now()})
-    emit(rider_id, "Pickup recorded (one campus stop). Reply DROPPED at the kitchen.")
+    if trip.get("lat") is not None:
+        emit(rider_id, "Pickup recorded. Mark dropped off at the NGO.")
+    else:
+        emit(rider_id, "Pickup recorded (one campus stop). Reply DROPPED at the kitchen.")
     return {"ok": True, "trip": trip}
 
 
@@ -374,8 +395,12 @@ def record_dropped(rider_id: str, trip_id: str | None = None) -> dict[str, Any]:
     if not trip:
         return {"ok": False, "error": "no_awaiting_drop_trip"}
     trip = store.upsert_trip({**trip, "state": "awaiting_received", "dropped_at": store._now()})
-    emit(rider_id, "Drop recorded. Waiting for the kitchen to reply RECEIVED.")
-    emit(trip["drop_id"], "Rider reports dropped. Reply RECEIVED if the covered containers are with you.")
+    if trip.get("lat") is not None:
+        emit(rider_id, "Drop recorded. Waiting for the NGO to confirm.")
+        emit(trip["drop_id"], "Rider reports dropped. Confirm when the covered containers are with you.")
+    else:
+        emit(rider_id, "Drop recorded. Waiting for the kitchen to reply RECEIVED.")
+        emit(trip["drop_id"], "Rider reports dropped. Reply RECEIVED if the covered containers are with you.")
     return {"ok": True, "trip": trip}
 
 

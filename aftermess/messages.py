@@ -60,6 +60,14 @@ def match_none(sitting: str) -> str:
 def rider_assign(trip: dict[str, Any], drop: dict[str, Any], messes: list[dict[str, Any]]) -> str:
     pickup = ", ".join(_name(m, m.get("id", "mess")) for m in messes)
     plates = trip.get("assigned_plates") or {}
+    names = {m.get("id"): _name(m, m.get("id", "mess")) for m in messes}
+    if trip.get("lat") is not None:
+        named = ", ".join(f"{names.get(key, key)} {qty}" for key, qty in plates.items())
+        return (
+            f"Nearby leftover pickup. Food is free.\n"
+            f"Pickup: {pickup}. Drop: {_name(drop, trip['drop_id'])}.\n"
+            f"Plates: {trip.get('plates')} ({named})."
+        )
     plate_txt = ", ".join(f"{k}:{v}" for k, v in plates.items())
     return (
         f"Campus leftover pickup (not a food sale). Reply ACCEPT or CANCEL.\n"
@@ -69,18 +77,30 @@ def rider_assign(trip: dict[str, Any], drop: dict[str, Any], messes: list[dict[s
 
 
 def no_rider(trip: dict[str, Any]) -> str:
+    if trip.get("lat") is not None:
+        return (
+            "No free rider within 10 km. The leftover stays at the mess. "
+            "No one is added from outside registered riders."
+        )
     return (
         f"No rostered rider available for {_name(None, trip['drop_id'])}. "
         "Leftover will not be sent. No outside recruit."
     )
 
 
+def request_replaced() -> str:
+    return "That pickup request was updated and closed. Use the newest message only."
+
+
 def pay_reminder(trip: dict[str, Any], rider: dict[str, Any], rupees: int | None) -> str:
     upi = rider.get("upi_id") or "(UPI OPEN — fill directory)"
     amount = f"INR {rupees}" if rupees not in (None, "") else "the agreed trip amount"
+    who = _name(rider, trip.get("rider_id") or "rider")
+    if trip.get("lat") is not None:
+        return f"Food is free. Pay the rider {amount} on UPI {upi} ({who})."
     return (
         f"Food is free. Pay the rider {amount} on UPI {upi} "
-        f"({_name(rider, trip.get('rider_id') or 'rider')}). Reply PAID or NOT YET."
+        f"({who}). Reply PAID or NOT YET."
     )
 
 

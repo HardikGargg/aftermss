@@ -8,7 +8,7 @@ from typing import Any
 from aftermess import store
 from aftermess.config import get_party, load_directory
 from aftermess.loop import sitting_status
-from aftermess.paths import data_dir
+from aftermess.paths import runtime_dir
 
 
 def write_schedule_ii_for_trip(trip_id: str) -> list[dict[str, Any]]:
@@ -47,6 +47,7 @@ def write_schedule_ii_for_trip(trip_id: str) -> list[dict[str, Any]]:
             "distribution_date": trip.get("received_at") or trip["sitting_date"],
             "veg": rel.get("veg"),
             "rider_id": trip.get("rider_id"),
+            "mess_id": mess_id,
         }
         rows.append(store.append_schedule_ii(row))
     return rows
@@ -82,7 +83,7 @@ def eat_right_pack(sitting_date: str, sitting: str) -> dict[str, Any]:
 def export_files(sitting_date: str, sitting: str) -> dict[str, str]:
     status = sitting_status(sitting_date, sitting)
     pack = eat_right_pack(sitting_date, sitting)
-    out_dir = data_dir() / "exports"
+    out_dir = runtime_dir() / "exports"
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{sitting_date}_{sitting}"
     sii_path = out_dir / f"schedule_ii_{stem}.json"

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 
 from aftermess.config import get_party, load_directory, sitting_date_str
 from aftermess.demo import run_locked_demo
@@ -19,47 +19,6 @@ from aftermess.whatsapp import (
     normalize_twilio,
     verify_meta_signature,
 )
-
-
-def create_app():
-    from fastapi import FastAPI, Header, HTTPException, Request
-
-JUDGE_HTML = """<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>AfterMess live demo</title>
-  <style>
-    body { font-family: sans-serif; max-width: 42rem; margin: 2rem auto; line-height: 1.4; }
-    button { font-size: 1rem; padding: 0.6rem 1rem; }
-    pre { background: #111; color: #eee; padding: 1rem; overflow: auto; }
-  </style>
-</head>
-<body>
-  <h1>AfterMess</h1>
-  <p>IIITD leftover closeout. This page is for judges, not mess staff. Mess, drops, and riders use WhatsApp.</p>
-  <p>Lunch demo: Drop A needs 40 veg plates, leftover 15+20, match fills Drop A with 35, rider 1 cancels, rider 2 finishes, Schedule II is written.</p>
-  <button id="run">Run lunch demo</button>
-  <pre id="out">Ready.</pre>
-  <script>
-    document.getElementById('run').onclick = async () => {
-      const out = document.getElementById('out');
-      out.textContent = 'Running…';
-      const res = await fetch('/demo', { method: 'POST' });
-      const data = await res.json();
-      out.textContent = JSON.stringify({
-        ok: data.ok,
-        plates_moved: data.status && data.status.plates_moved,
-        trip_state: data.status && data.status.trips && data.status.trips[0] && data.status.trips[0].state,
-        rider: data.status && data.status.trips && data.status.trips[0] && data.status.trips[0].rider_id,
-        schedule_ii_rows: data.status && data.status.schedule_ii && data.status.schedule_ii.length
-      }, null, 2);
-    };
-  </script>
-</body>
-</html>
-"""
 
 
 def _demo_allowed(header_token: str | None) -> bool:
@@ -81,9 +40,9 @@ def _invocation_prompt(payload: dict[str, Any]) -> str:
 def create_app():
     app = FastAPI(title="AfterMess", version="1.0.0")
 
-    @app.get("/", response_class=HTMLResponse)
+    @app.get("/")
     async def home():
-        return JUDGE_HTML
+        return RedirectResponse(url="/app", status_code=302)
 
     @app.get("/ping")
     async def ping():
@@ -110,7 +69,11 @@ def create_app():
         if "application/x-www-form-urlencoded" in ctype or "multipart/form-data" in ctype:
             form = dict(await request.form())
             msg = normalize_twilio({k: str(v) for k, v in form.items()})
-            return {"results": [dispatch_text(msg["from"], msg["text"], msg["id"])]}
+            dispatch_text(msg["from"], msg["text"], msg["id"])
+            return Response(
+                content='<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
+                media_type="application/xml",
+            )
         if not verify_meta_signature(raw, x_hub_signature_256):
             raise HTTPException(status_code=403, detail="bad signature")
         payload = json.loads(raw.decode() or "{}")
@@ -187,6 +150,9 @@ def create_app():
             }
         }
 
+    from aftermess.webapi import mount
+
+    mount(app)
     return app
 
 

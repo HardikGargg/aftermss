@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from aftermess.geo import release_reaches
+
 
 def need_policy(need: dict[str, Any], drop: dict[str, Any]) -> str:
     override = need.get("veg_policy")
@@ -68,10 +70,12 @@ def plan_trips(
             if need["id"] in assigned_need_ids:
                 continue
             usable = 0
+            drop = drops[need["drop_id"]]
             for rel_id, left in remaining.items():
                 if left <= 0:
                     continue
-                if compatible({**rel_by_id[rel_id], "plates_remaining": left, "status": "offered"}, need["_policy"]):
+                rel = {**rel_by_id[rel_id], "plates_remaining": left, "status": "offered"}
+                if compatible(rel, need["_policy"]) and release_reaches(rel, drop):
                     usable += left
             score = min(int(need["plates"]), usable)
             if score > 0:
@@ -80,6 +84,7 @@ def plan_trips(
             break
         scored.sort(key=lambda row: (-row[0], row[1], row[2]["id"]))
         _, _, winner = scored[0]
+        drop = drops[winner["drop_id"]]
         still_need = int(winner["plates"])
         assignments: dict[str, int] = {}
         mess_ids: list[str] = []
@@ -94,7 +99,8 @@ def plan_trips(
             if still_need <= 0 or left <= 0:
                 continue
             rel = rel_by_id[rel_id]
-            if not compatible({**rel, "plates_remaining": left, "status": "offered"}, winner["_policy"]):
+            shaped = {**rel, "plates_remaining": left, "status": "offered"}
+            if not compatible(shaped, winner["_policy"]) or not release_reaches(shaped, drop):
                 continue
             take = min(left, still_need)
             assignments[rel["mess_id"]] = assignments.get(rel["mess_id"], 0) + take

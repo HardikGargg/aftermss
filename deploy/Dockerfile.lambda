@@ -1,0 +1,12 @@
+FROM public.ecr.aws/lambda/python:3.12
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY aftermess ${LAMBDA_TASK_ROOT}/aftermess
+COPY data/aftermess/directory.json ${LAMBDA_TASK_ROOT}/data/aftermess/directory.json
+COPY data/aftermess/config.json ${LAMBDA_TASK_ROOT}/data/aftermess/config.json
+
+ENV AFTERMESS_RUNTIME_DIR=/tmp/aftermess
+
+CMD ["aftermess.lambda_handler.handler"]

@@ -199,6 +199,17 @@ class AfterMessTests(unittest.TestCase):
         status = sitting_status(date, sitting)
         self.assertEqual(status["plates_moved"], 35)
 
+    def test_whatsapp_env_overlay(self):
+        os.environ["AFTERMESS_WA_MESS_A"] = "+919876543210"
+        try:
+            from aftermess.config import party_by_whatsapp
+
+            party = party_by_whatsapp("whatsapp:+919876543210")
+            self.assertIsNotNone(party)
+            self.assertEqual(party["id"], "mess_a")
+        finally:
+            os.environ.pop("AFTERMESS_WA_MESS_A", None)
+
     def test_http_ping_and_demo(self):
         from fastapi.testclient import TestClient
 

@@ -1,4 +1,5 @@
 .venv/
+build/
 __pycache__/
 *.pyc
 .env
@@ -7,6 +8,7 @@ data/ledger.json
 data/decisions.json
 data/processed/
 data/aftermess/runtime.json
+data/aftermess/accounts.json
 data/aftermess/exports/
 *.egg-info/
 .idea/

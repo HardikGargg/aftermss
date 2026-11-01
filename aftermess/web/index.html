@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AfterMess</title>
+  <link rel="stylesheet" href="/app/app.css">
+</head>
+<body>
+  <main id="app">
+    <section id="view-home" class="narrow">
+      <p class="brand"><span class="mark" aria-hidden="true"></span> AfterMess</p>
+      <h1>Unused plates, sent to a nearby kitchen.</h1>
+      <p class="lede">Messes and NGOs within 10 km move leftover that was never served. The food is free. A rider carries it. The NGO pays only the rider, on UPI.</p>
+      <ol class="steps">
+        <li><span>1</span><div><strong>Ask</strong><p>The NGO says how many plates it needs.</p></div></li>
+        <li><span>2</span><div><strong>Release</strong><p>The mess sends only unused food, after a safety check.</p></div></li>
+        <li><span>3</span><div><strong>Carry</strong><p>The nearest free rider takes it, then gets paid on UPI.</p></div></li>
+      </ol>
+      <div class="actions-stack">
+        <button id="go-register" type="button">Register</button>
+        <button id="go-login" class="secondary" type="button">Sign in</button>
+      </div>
+    </section>
+
+    <section id="view-register" class="narrow" hidden>
+      <button id="reg-back" class="text" type="button">Back</button>
+      <h1>Create an account</h1>
+      <p class="lede">One phone number and a PIN. No text message.</p>
+      <p id="reg-flash" class="flash" hidden></p>
+      <form id="reg-form">
+        <fieldset class="plain">
+          <legend>You are</legend>
+          <div class="roles">
+            <label class="role-card">
+              <input type="radio" name="role" value="mess" checked>
+              <strong>Mess</strong>
+              <span>Release unused plates</span>
+            </label>
+            <label class="role-card">
+              <input type="radio" name="role" value="ngo">
+              <strong>NGO</strong>
+              <span>Ask for food</span>
+            </label>
+            <label class="role-card">
+              <input type="radio" name="role" value="rider">
+              <strong>Rider</strong>
+              <span>Carry a nearby trip</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <h2>Account</h2>
+        <label for="reg-name">Name</label>
+        <input id="reg-name" required maxlength="80" autocomplete="organization" placeholder="Kitchen or rider name">
+        <div class="pair">
+          <div>
+            <label for="reg-phone">Phone</label>
+            <input id="reg-phone" required inputmode="tel" autocomplete="tel" placeholder="98xxxxxxxx">
+          </div>
+          <div>
+            <label for="reg-pin">PIN</label>
+            <input id="reg-pin" required inputmode="numeric" minlength="4" maxlength="6" autocomplete="new-password" placeholder="4–6 digits">
+          </div>
+        </div>
+
+        <h2>Details</h2>
+        <div id="field-fssai">
+          <label for="reg-fssai">FSSAI number</label>
+          <input id="reg-fssai" maxlength="40" placeholder="As printed on the licence">
+        </div>
+        <div id="field-veg-mess">
+          <label for="reg-veg-mess">Usual food</label>
+          <select id="reg-veg-mess">
+            <option value="veg">Veg</option>
+            <option value="nonveg">Non-veg</option>
+          </select>
+        </div>
+        <div id="field-veg-ngo" hidden>
+          <label for="reg-veg-ngo">Food you can take</label>
+          <select id="reg-veg-ngo">
+            <option value="veg_only">Veg only</option>
+            <option value="nonveg_ok">Veg or non-veg</option>
+            <option value="nonveg_only">Non-veg only</option>
+          </select>
+        </div>
+        <div id="field-upi" hidden>
+          <label for="reg-upi">UPI id</label>
+          <input id="reg-upi" maxlength="80" placeholder="name@oksbi" autocomplete="off">
+        </div>
+
+        <h2>Location</h2>
+        <p class="fine">People see you only if they are within 10 km of this pin.</p>
+        <button id="use-location" class="secondary" type="button">Use my location</button>
+        <div id="area-picks" class="chips"></div>
+        <p id="loc-label" class="loc">No location yet</p>
+        <button type="submit">Create account</button>
+      </form>
+    </section>
+
+    <section id="view-login" class="narrow" hidden>
+      <button id="login-back" class="text" type="button">Back</button>
+      <h1>Sign in</h1>
+      <p class="lede">Use the phone and PIN from registration.</p>
+      <p id="login-flash" class="flash" hidden></p>
+      <form id="login-form">
+        <label for="login-phone">Phone</label>
+        <input id="login-phone" required inputmode="tel" autocomplete="username" placeholder="98xxxxxxxx">
+        <label for="login-pin">PIN</label>
+        <input id="login-pin" required inputmode="numeric" minlength="4" maxlength="6" autocomplete="current-password" placeholder="PIN">
+        <button type="submit">Sign in</button>
+      </form>
+    </section>
+
+    <section id="view-board" hidden>
+      <header class="bar">
+        <p class="brand"><span class="mark" aria-hidden="true"></span> AfterMess</p>
+        <div class="switch" role="group" aria-label="Sitting">
+          <button id="sit-lunch" type="button">Lunch</button>
+          <button id="sit-dinner" type="button">Dinner</button>
+        </div>
+        <div class="bar-end">
+          <button id="sign-out" class="text" type="button">Sign out</button>
+        </div>
+      </header>
+
+      <div class="who">
+        <p class="kicker" id="who-role"></p>
+        <h1 id="who-name"></h1>
+        <p class="fine" id="who-meta"></p>
+      </div>
+      <p id="flash" class="flash" hidden></p>
+
+      <div class="layout">
+        <div class="col">
+          <section id="panel-need" class="panel" hidden>
+            <h2>Today’s request</h2>
+            <p id="need-text" class="fine"></p>
+            <form id="need-form">
+              <div class="pair">
+                <div>
+                  <label for="need-plates">Plates</label>
+                  <input id="need-plates" type="number" min="1" max="500" required placeholder="40">
+                </div>
+                <div>
+                  <label for="need-veg">Food</label>
+                  <select id="need-veg">
+                    <option value="veg_only">Veg only</option>
+                    <option value="nonveg_ok">Veg or non-veg</option>
+                    <option value="nonveg_only">Non-veg only</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit">Ask for plates</button>
+            </form>
+          </section>
+
+          <section id="panel-record" class="panel" hidden>
+            <h2>Campus record</h2>
+            <p id="record-total" class="record-total">0</p>
+            <p id="record-caption" class="fine"></p>
+            <p id="record-item7" class="fine"></p>
+            <div id="record-rows"></div>
+          </section>
+
+          <section id="panel-release" class="panel" hidden>
+            <h2>Today’s leftover</h2>
+            <p class="fine">Unused food that was never served. Do not cook extra.</p>
+            <p id="release-text"></p>
+            <form id="release-form">
+              <div class="pair">
+                <div>
+                  <label for="rel-plates">Plates</label>
+                  <input id="rel-plates" type="number" min="1" max="500" required placeholder="15">
+                </div>
+                <div>
+                  <label for="rel-veg">Type</label>
+                  <select id="rel-veg">
+                    <option value="veg">Veg</option>
+                    <option value="nonveg">Non-veg</option>
+                  </select>
+                </div>
+              </div>
+              <label for="rel-dishes">Dishes</label>
+              <input id="rel-dishes" required maxlength="120" placeholder="dal, rice, roti">
+              <div class="pair">
+                <div>
+                  <label for="rel-temp">Temperature °C</label>
+                  <input id="rel-temp" type="number" step="0.1" required placeholder="65">
+                </div>
+                <div>
+                  <label for="rel-prep">Prepared</label>
+                  <input id="rel-prep" type="datetime-local" required>
+                </div>
+              </div>
+              <label for="rel-useby">Use by</label>
+              <input id="rel-useby" type="datetime-local" required>
+              <div class="checks">
+                <label class="check"><input id="rel-unused" type="checkbox" required> Never served, still unused</label>
+                <label class="check"><input id="rel-packed" type="checkbox" required> Packed and covered</label>
+                <label class="check"><input id="rel-insulated" type="checkbox" required> Insulated</label>
+              </div>
+              <button type="submit">Release leftover</button>
+            </form>
+            <button id="no-leftover" class="secondary" type="button">No leftover today</button>
+          </section>
+
+          <section id="trip-section" class="panel">
+            <h2>Trip</h2>
+            <div id="trips"></div>
+          </section>
+        </div>
+
+        <aside class="col">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Within <span id="km">10</span> km</h2>
+              <button id="check-again" class="text" type="button">Check again</button>
+            </div>
+            <p class="fine">The NGO we can fill most is matched first.</p>
+            <div id="nearby"></div>
+          </section>
+          <section class="panel">
+            <details>
+              <summary>Activity</summary>
+              <div id="updates" class="log"></div>
+            </details>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <script src="/app/app.js"></script>
+</body>
+</html>

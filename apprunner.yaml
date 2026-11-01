@@ -1,0 +1,13 @@
+# App Runner source deploy (Python 3.11). WhatsApp webhook is this service's /webhook.
+version: 1.0
+runtime: python311
+build:
+  commands:
+    build:
+      - pip3 install -r requirements.txt
+run:
+  runtime-version: 3.11
+  command: python -m uvicorn aftermess.server:get_app --factory --host 0.0.0.0 --port 8080
+  network:
+    port: 8080
+    env: PORT

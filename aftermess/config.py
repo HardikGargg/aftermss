@@ -9,7 +9,26 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from aftermess.paths import config_path, directory_path
+from dotenv import load_dotenv
+
+from aftermess.paths import ROOT, config_path, directory_path
+
+load_dotenv(ROOT / ".env")
+
+_WA_ENV = {
+    "mess_a": "AFTERMESS_WA_MESS_A",
+    "mess_b": "AFTERMESS_WA_MESS_B",
+    "drop_a": "AFTERMESS_WA_DROP_A",
+    "drop_b": "AFTERMESS_WA_DROP_B",
+    "rider_1": "AFTERMESS_WA_RIDER_1",
+    "rider_2": "AFTERMESS_WA_RIDER_2",
+    "rider_3": "AFTERMESS_WA_RIDER_3",
+}
+_UPI_ENV = {
+    "rider_1": "AFTERMESS_UPI_RIDER_1",
+    "rider_2": "AFTERMESS_UPI_RIDER_2",
+    "rider_3": "AFTERMESS_UPI_RIDER_3",
+}
 
 _ENV_CLOCKS = {
     "AFTERMESS_LUNCH_NEED_CUTOFF": ("clocks", "lunch_need_cutoff"),
@@ -34,7 +53,26 @@ def _read_json(path) -> dict[str, Any]:
 
 
 def load_directory() -> dict[str, Any]:
-    return _read_json(directory_path())
+    data = deepcopy(_read_json(directory_path()))
+    for group in ("messes", "drops", "riders"):
+        for party in data.get(group) or []:
+            wa_key = _WA_ENV.get(party.get("id") or "")
+            if wa_key:
+                wa = os.environ.get(wa_key)
+                if wa not in (None, ""):
+                    party["whatsapp"] = wa.strip()
+            upi_key = _UPI_ENV.get(party.get("id") or "")
+            if upi_key:
+                upi = os.environ.get(upi_key)
+                if upi not in (None, ""):
+                    party["upi_id"] = upi.strip()
+    waba_phone = os.environ.get("AFTERMESS_WABA_PHONE")
+    if waba_phone not in (None, ""):
+        data.setdefault("waba", {})["phone"] = waba_phone.strip()
+    provider = os.environ.get("WHATSAPP_PROVIDER")
+    if provider not in (None, ""):
+        data.setdefault("waba", {})["provider"] = provider.lower()
+    return data
 
 
 def load_config() -> dict[str, Any]:
@@ -64,6 +102,9 @@ def load_config() -> dict[str, Any]:
         cfg["whatsapp_provider"] = provider.lower()
     else:
         cfg["whatsapp_provider"] = "simulator"
+    km = os.environ.get("AFTERMESS_NEARBY_KM")
+    if km not in (None, ""):
+        cfg["nearby_km"] = float(km)
     return cfg
 
 
@@ -100,9 +141,14 @@ def party_index(directory: dict[str, Any] | None = None) -> dict[str, dict[str, 
 
 def get_party(party_id: str, directory: dict[str, Any] | None = None) -> dict[str, Any]:
     idx = party_index(directory)
-    if party_id not in idx:
-        raise KeyError(f"unknown party {party_id}")
-    return idx[party_id]
+    if party_id in idx:
+        return idx[party_id]
+    from aftermess.accounts import lookup_party
+
+    found = lookup_party(party_id)
+    if found:
+        return found
+    raise KeyError(f"unknown party {party_id}")
 
 
 def party_by_whatsapp(number: str, directory: dict[str, Any] | None = None) -> dict[str, Any] | None:
@@ -112,7 +158,9 @@ def party_by_whatsapp(number: str, directory: dict[str, Any] | None = None) -> d
     for party in party_index(directory).values():
         if _digits(str(party.get("whatsapp") or "")) == digits:
             return party
-    return None
+    from aftermess.accounts import lookup_phone
+
+    return lookup_phone(number)
 
 
 def _digits(value: str) -> str:

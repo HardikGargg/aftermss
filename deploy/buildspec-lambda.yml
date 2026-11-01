@@ -1,0 +1,12 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com
+  build:
+    commands:
+      - docker build -f deploy/Dockerfile.lambda -t ${ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/aftermess:latest .
+  post_build:
+    commands:
+      - docker push ${ACCOUNT}.dkr.ecr.us-east-1.amazonaws.com/aftermess:latest
