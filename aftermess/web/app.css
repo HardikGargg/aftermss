@@ -181,6 +181,7 @@ legend { font-weight: 650; margin-bottom: 0.55rem; }
   font-weight: 600;
 }
 .chip.on { background: var(--orange); border-color: var(--orange); color: #fff; }
+.demos { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.45rem; }
 .loc {
   margin-top: 0.7rem;
   color: var(--muted);

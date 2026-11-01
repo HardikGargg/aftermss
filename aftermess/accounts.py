@@ -294,13 +294,98 @@ def register(payload: dict[str, Any]) -> tuple[dict[str, Any], str]:
     return _public(row), token
 
 
+_DEMOS: list[dict[str, str]] = [
+    {
+        "id": "mess_iiitd",
+        "role": "mess",
+        "display_name": "IIITD Mess",
+        "phone": "9811100001",
+        "pin": "1111",
+        "preset": "iiitd",
+        "fssai": "DEMO-FBO-IIITD",
+        "veg_policy": "veg",
+        "upi_id": "",
+    },
+    {
+        "id": "ngo_govindpuri",
+        "role": "ngo",
+        "display_name": "Govindpuri Kitchen",
+        "phone": "9811100002",
+        "pin": "2222",
+        "preset": "govindpuri",
+        "fssai": "DEMO-SFDO-GOVINDPURI",
+        "veg_policy": "nonveg_ok",
+        "upi_id": "",
+    },
+    {
+        "id": "rider_campus",
+        "role": "rider",
+        "display_name": "Campus Rider",
+        "phone": "9811100003",
+        "pin": "3333",
+        "preset": "kalkaji",
+        "fssai": "",
+        "veg_policy": "",
+        "upi_id": "campus@oksbi",
+    },
+]
+
+
+def ensure_demo_accounts() -> None:
+    """Create the three README sign-in accounts when this server has none."""
+    from aftermess.geo import PRESETS
+
+    pins = {row["id"]: row for row in PRESETS}
+    with _LOCK:
+        data = _read()
+        changed = False
+        for spec in _DEMOS:
+            phone = normalize_phone(spec["phone"])
+            existing = next(
+                (item for item in data["parties"] if _phones_match(item.get("phone") or "", phone)),
+                None,
+            )
+            if existing:
+                if secrets.compare_digest(_hash_pin(spec["pin"], existing["pin_salt"]), existing["pin_hash"]):
+                    continue
+                salt = secrets.token_hex(16)
+                existing["pin_salt"] = salt
+                existing["pin_hash"] = _hash_pin(spec["pin"], salt)
+                changed = True
+                continue
+            area = pins[spec["preset"]]
+            salt = secrets.token_hex(16)
+            data["parties"].append(
+                {
+                    "id": spec["id"],
+                    "role": spec["role"],
+                    "display_name": spec["display_name"],
+                    "phone": phone,
+                    "pin_salt": salt,
+                    "pin_hash": _hash_pin(spec["pin"], salt),
+                    "area": area["label"],
+                    "lat": area["lat"],
+                    "lng": area["lng"],
+                    "fssai": spec["fssai"],
+                    "veg_policy": spec["veg_policy"],
+                    "upi_id": spec["upi_id"],
+                    "created_at": _now().isoformat(timespec="seconds"),
+                }
+            )
+            changed = True
+        if changed:
+            _write(data)
+
+
 def login(phone_raw: str, pin_raw: str) -> tuple[dict[str, Any], str]:
     phone = normalize_phone(phone_raw)
     pin = _check_pin(pin_raw)
     with _LOCK:
         data = _read()
         row = next((item for item in data["parties"] if _phones_match(item.get("phone") or "", phone)), None)
-        if not row or not secrets.compare_digest(_hash_pin(pin, row["pin_salt"]), row["pin_hash"]):
+        if not row:
+            raise AccountError("That phone is not registered. Create an account, or use a demo account.")
+        if not secrets.compare_digest(_hash_pin(pin, row["pin_salt"]), row["pin_hash"]):
             raise AccountError("Phone or PIN does not match.")
         token = _session(data, row["id"])
         _write(data)

@@ -55,6 +55,8 @@ def _page(name: str) -> FileResponse:
 
 
 def mount(app: FastAPI) -> None:
+    accounts.ensure_demo_accounts()
+
     @app.get("/app")
     @app.get("/app/")
     async def app_page():
@@ -93,8 +95,11 @@ def mount(app: FastAPI) -> None:
 
     @app.get("/api/me")
     async def me(request: Request):
-        row = _viewer(request)
+        row = accounts.session_row(_token(request))
+        if not row:
+            return {"signed_in": False}
         body = {
+            "signed_in": True,
             "id": row["id"],
             "role": row["role"],
             "display_name": row["display_name"],

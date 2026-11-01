@@ -101,9 +101,15 @@
     <section id="view-login" class="narrow" hidden>
       <button id="login-back" class="text" type="button">Back</button>
       <h1>Sign in</h1>
-      <p class="lede">Use the phone and PIN from registration.</p>
+      <p class="lede">Use the phone and PIN from registration, or a demo account.</p>
       <p id="login-flash" class="flash" hidden></p>
       <form id="login-form">
+        <p class="fine">Demo accounts</p>
+        <div class="demos">
+          <button type="button" class="chip" data-phone="9811100001" data-pin="1111">IIITD Mess</button>
+          <button type="button" class="chip" data-phone="9811100002" data-pin="2222">Govindpuri Kitchen</button>
+          <button type="button" class="chip" data-phone="9811100003" data-pin="3333">Campus Rider</button>
+        </div>
         <label for="login-phone">Phone</label>
         <input id="login-phone" required inputmode="tel" autocomplete="username" placeholder="98xxxxxxxx">
         <label for="login-pin">PIN</label>

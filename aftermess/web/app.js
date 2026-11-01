@@ -249,6 +249,13 @@ function bind() {
   });
   document.getElementById("reg-back").addEventListener("click", () => show("view-home"));
   document.getElementById("login-back").addEventListener("click", () => show("view-home"));
+  document.querySelectorAll("#login-form [data-phone]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.getElementById("login-phone").value = button.dataset.phone;
+      document.getElementById("login-pin").value = button.dataset.pin;
+      document.getElementById("login-form").requestSubmit();
+    });
+  });
   document.querySelectorAll('input[name="role"]').forEach((input) => {
     input.addEventListener("change", syncRole);
   });
@@ -398,7 +405,7 @@ function bind() {
 async function boot() {
   bind();
   const data = await api("/api/me");
-  if (data._status === 200 && data.id) await showBoard("");
+  if (data.signed_in && data.id) await showBoard("");
   else show("view-home");
 }
 
