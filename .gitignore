@@ -13,3 +13,4 @@ data/aftermess/exports/
 *.egg-info/
 .idea/
 .vscode/
+.cursor/

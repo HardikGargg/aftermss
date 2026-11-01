@@ -1,134 +1,61 @@
 # AfterMess
 
-Good Neighbor agent for **IIIT Delhi** leftover closeout. Two mess vendors (same campus), two named drops, a named rider roster. Food is **free unused leftover**. Drops pay only the rider on UPI. WhatsApp is the only user interface.
+Unused leftover from a mess, carried to a nearby NGO. The food is free. A rider takes it, and the NGO pays only the rider on UPI.
 
-**Track:** Good Neighbor. Built with the **Strands Agents SDK** (Amazon Nova Lite on Bedrock). Safety, plate math, and the rider roster are Python. The model may parse messy text and draft copy. It cannot override a safety refuse.
+**Live app:** [https://aftermess.onrender.com/app](https://aftermess.onrender.com/app)
 
-License: **Apache-2.0** (`LICENSE`). Do not commit `.env`.
+Messes, NGOs, and riders register on the site. People only see and match with others within 10 km. Lunch and dinner are separate sittings. Safety checks and plate matching stay in Python. A model, when configured, may parse messy text. It cannot override a safety refusal.
 
-## Architecture
+License: Apache-2.0 (`LICENSE`). Do not commit `.env`.
 
-```mermaid
-flowchart TD
-  trigger[WhatsApp webhook or CLI tick or POST /demo]
-  trigger --> strands[Strands agent Bedrock Nova Lite]
-  strands --> tools[Tools: need release match rider proof pay export]
-  tools --> py[Python safety gate and fill-one-drop match]
-  py --> store[JSON ledger plus optional S3]
-  strands --> hitl[Human keywords only: RELEASE ACCEPT PICKED DROPPED RECEIVED PAID]
-  hitl --> side[Schedule II row and Eat Right pack]
-  side --> notify[WhatsApp DM or simulator outbox]
-```
+## A sitting
 
-Mess, drop, and rider never use a web app. `GET /` is a judge button only.
+1. The NGO asks for a number of plates and says whether they take veg only, non-veg only, or either.
+2. The mess releases unused food that was never served, with the dish name, veg or non-veg, temperature, prep time, use-by time, and confirmation that it is packed and insulated. Or the mess says there is no leftover.
+3. AfterMess matches `min(need, leftover)` inside 10 km. If several NGOs qualify, the one that can be filled most is matched first. Unsafe food is refused.
+4. The nearest free rider is asked. Cancel offers the trip to the next nearest rider.
+5. The rider marks picked up, then dropped off. The NGO confirms receipt, pays the rider on UPI, and marks the trip paid.
 
-## Run without AWS or WhatsApp (today)
+When the NGO confirms receipt, AfterMess writes an FSSAI Schedule II row for that mess. The mess dashboard shows the running total of plates actually handed over and those rows. That is the evidence a campus can use for Eat Right Campus Sustainable Food item 7 (surplus that is still safe was shared). It is not a cash payment, an 80G deduction, or a CSR credit.
+
+## Demo accounts
+
+Register these on the live site if sign-in says the phone is unknown. A free Render instance sleeps after 15 minutes and drops local accounts when it wakes.
+
+| Who | Name | Phone | PIN | Area |
+| --- | --- | --- | --- | --- |
+| Mess | IIITD Mess | 9811100001 | 1111 | IIIT Delhi |
+| NGO | Govindpuri Kitchen | 9811100002 | 2222 | Govindpuri |
+| Rider | Campus Rider | 9811100003 | 3333 | Kalkaji |
+
+Stay on **Lunch**. NGO asks first, then the mess releases, then the rider accepts, picks up, and drops off. The NGO confirms receipt and marks the rider paid. The rider UPI id is `campus@oksbi`.
+
+## Run locally
 
 ```powershell
-cd D:\AWS-Hackathon
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m unittest tests.test_aftermess
-python -m aftermess demo
+python -m unittest tests.test_aftermess tests.test_platform
+python -m aftermess webhook --host 127.0.0.1 --port 8099
 ```
 
-`demo` is the locked lunch script: Drop A needs 40 veg plates, Drop B needs 20, Mess A releases 15, Mess B releases 20, match fills Drop A with 35, rider 1 cancels, rider 2 accepts, pickup/drop/received/paid, Schedule II export.
-
-Operator CLI (same keywords the live webhook uses):
-
-```powershell
-python -m aftermess reset
-python -m aftermess inbound --party drop_a --text "NEED 40 LUNCH VEG" --sitting lunch --date 2026-09-08
-python -m aftermess tick --sitting lunch --phase needs_cutoff --date 2026-09-08
-python -m aftermess tick --sitting lunch --phase closeout --date 2026-09-08
-python -m aftermess inbound --party mess_a --text "RELEASE 15 DISHES dal,rice VEG veg UNUSED yes PREP 2026-09-08T13:00:00+05:30 USEBY 2026-09-08T18:00:00+05:30 TEMP 65 PACKED yes INSULATED yes BATCH fresh-cooked PERISHABLE yes" --sitting lunch --date 2026-09-08
-python -m aftermess tick --sitting lunch --phase match --date 2026-09-08
-python -m aftermess status --sitting lunch --date 2026-09-08
-python -m aftermess export --sitting lunch --date 2026-09-08
-python -m aftermess outbox
-```
-
-OPEN campus clocks, rupee amount, WhatsApp numbers, and FSSAI ids live in `data/aftermess/directory.json` and `data/aftermess/config.json`. Fill them before a live run. Do not invent sitting times in code. If clocks are null, `tick` needs `--phase`.
-
-## Live WhatsApp
-
-Copy `.env.example` to `.env`. Set `WHATSAPP_PROVIDER=meta` or `twilio` and the matching tokens. Put real numbers on the directory. Utility template names in config stay null until the WABA is approved; until then the adapter sends free-form text (works inside an open 24h window and in the simulator).
-
-```powershell
-python -m aftermess webhook --port 8080
-```
-
-Meta verify URL: `GET /webhook`. Inbound: `POST /webhook`.
-
-## Strands agent (needs a model)
-
-```powershell
-python -m aftermess run --sitting lunch --phase match
-```
-
-Default model is Amazon Nova Lite.
-
-## Deploy live (judges + WhatsApp + AgentCore)
-
-I cannot log into your AWS or Meta account. The HTTP app is ready; you still create the accounts and push the image.
-
-**What goes live**
-
-- Public HTTPS app (judge page `GET /`, `POST /demo`, WhatsApp `GET|POST /webhook`)
-- Same container satisfies AgentCore: `GET /ping`, `POST /invocations`, port **8080**, **linux/arm64**
-- Sitting state in **S3** if `AFTERMESS_S3_BUCKET` is set
-
-**0. Accounts (you)**
-
-1. AWS account + `aws configure` (region `us-east-1`).
-2. Bedrock console → enable **Amazon Nova Lite** (`amazon.nova-lite-v1:0`).
-3. Credits form before **11 Sep 12:00 pm PT**.
-4. WhatsApp: Meta Cloud API **or** Twilio WhatsApp. Meta needs a verified WABA and HTTPS callback. Twilio sandbox is faster for the video.
-
-**1. Local live server (no AWS yet)**
-
-```powershell
-.\.venv\Scripts\python.exe -m aftermess webhook --host 127.0.0.1 --port 8080
-```
-
-Open http://127.0.0.1:8080 and click **Run lunch demo**.
-
-**2. Public URL (pick one)**
-
-**A — App Runner (best for WhatsApp).** Build/push ARM64 image, create App Runner service, port 8080, attach instance role that can call Bedrock and S3. The service URL is the live demo and the Meta webhook.
-
-**B — AgentCore Runtime (hackathon Technical score).** Same Dockerfile. Push to ECR, create runtime with `networkMode PUBLIC`, IAM role for Bedrock. Invoke with `POST /invocations` body `{"input":{"prompt":"demo"}}`. AgentCore is **not** a public Meta webhook by itself — keep App Runner (or similar) for WhatsApp.
-
-Docker (needs Docker Desktop + buildx):
-
-```powershell
-aws ecr create-repository --repository-name aftermess --region us-east-1
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ACCOUNT.dkr.ecr.us-east-1.amazonaws.com
-docker buildx build --platform linux/arm64 -t ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/aftermess:latest --push .
-```
-
-**3. Env on the service**
-
-`AWS_REGION=us-east-1`, Bedrock via the instance role (do not bake keys into the image). Optional: `AFTERMESS_S3_BUCKET`, `WHATSAPP_PROVIDER=meta` or `twilio`, token env vars from `.env.example`. Fill `data/aftermess/directory.json` WhatsApp numbers before real DMs.
-
-**4. Point WhatsApp at** `https://YOUR-URL/webhook`
-
-Meta: verify token = `WHATSAPP_VERIFY_TOKEN`. Then send `NEED 40 LUNCH VEG` from a number listed in the directory.
-
-**5. Judge check**
-
-- https://YOUR-URL/ → Run lunch demo
-- https://YOUR-URL/ping → `healthy`
-- https://YOUR-URL/health
-
-## What we do not claim
-
-There is no 80G deduction for leftover food in kind, no automatic CSR credit for own-cooked surplus, and no cash subsidy. The college packet is Eat Right Campus Part C evidence plus the FSSAI Schedule II register the agent writes after RECEIVED.
+Open http://127.0.0.1:8099/app
 
 ## Layout
 
-- `aftermess/` — store, safety gate, match, WhatsApp parser, loop, webhook, Strands tools
-- `data/aftermess/directory.json` — closed list of messes, drops, riders
-- `data/aftermess/config.json` — OPEN clocks, timeouts, trip rupees
-- `beforedue/` — earlier Everyday prototype (household bills), separate track
+- `aftermess/` — accounts, nearby match, safety gate, trip loop, site, optional WhatsApp webhook
+- `data/aftermess/directory.json` — closed campus list used by the keyword tools
+- `data/aftermess/config.json` — clocks, timeouts, and trip rupees. Null means the value is unset
+- `tests/` — parse, safety, match, signup, and the HTTP demo
+
+Accounts and the sitting ledger are `accounts.json` and `runtime.json` under `data/aftermess/`. They are gitignored.
+
+## Deploy
+
+The live service is a Render web service on the free plan.
+
+- Build: `pip install -r requirements.txt`
+- Start: `python -m aftermess webhook --host 0.0.0.0 --port $PORT`
+
+No environment variables are required for the website. Copy `.env.example` to `.env` only for a model (`python -m aftermess run`) or for live WhatsApp (`meta` or `twilio`). Set `AFTERMESS_S3_BUCKET` if sitting state should survive a restart.
